@@ -1240,6 +1240,16 @@ extractive rather than creative when reading back real numbers. Genuinely
 answers with real DB-grounded numbers, not fabricated ones — verified live,
 see `EXPERIMENTS.md`.
 
+**Live in production since 2026-08-11:** the GCP deployment (§10) runs
+Ollama natively on the VM host (not containerized) as a systemd service,
+with `llama3.2:3b` pulled. This reverses an earlier decision to keep AI
+narration on the rule-based tier in production for cost reasons — the VM
+was resized `e2-small` → `e2-standard-2` (2 vCPU/8GB RAM, CPU-only
+inference) to give the model enough headroom. See `EXPERIMENTS.md`
+(2026-08-11) for the full story, including a model-tag mismatch that
+initially kept production on tier 3 silently even after Ollama was
+installed and reachable.
+
 ---
 
 ### Cost Strategy
@@ -1373,12 +1383,21 @@ This is why `backend/.env.production`'s `ALLOWED_ORIGINS` is a raw
 ```bash
 gcloud compute instances create stock-market-monitor \
   --zone=asia-south1-a \
-  --machine-type=e2-small \
+  --machine-type=e2-standard-2 \
   --image-family=debian-12 \
   --image-project=debian-cloud \
   --tags=http-server \
   --boot-disk-size=20GB
 ```
+
+**Machine type note:** the live deployment runs `e2-standard-2` (2 vCPU,
+8GB RAM, ~$59.70/mo in asia-south1) rather than the cheaper `e2-small`
+(~$15.65/mo), specifically to run Ollama natively on the host for tier 2
+of the AI fallback ladder (§7) — CPU-only inference for a ~3B model needs
+more headroom than `e2-small`'s 2GB RAM allows. If you don't need real
+local-LLM narration in production and are fine with the app's rule-based
+tier 3 fallback (safe, intentional, never blank — see §7), `e2-small` is
+sufficient and cheaper.
 
 Reserve a **static external IP** so it survives VM restarts (matches what
 `ALLOWED_ORIGINS`/CORS is pinned to):
@@ -1408,6 +1427,48 @@ curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
 sudo apt-get install -y docker-compose-plugin
 ```
+
+### Step 3b — Install Ollama on the VM host (optional, for tier 2 AI narration)
+
+Ollama runs **natively on the host**, not as a container — `docker-compose.yml`
+already points the backend at it via `http://host.docker.internal:11434`
+(`extra_hosts: host.docker.internal:host-gateway` makes that DNS name
+resolve on Linux Docker Engine, not just Docker Desktop).
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh   # installs + enables ollama.service
+```
+
+**Required fix — Ollama's default bind is `127.0.0.1` only**, which the
+backend container can't reach through `host-gateway`. Override it to
+listen on all interfaces:
+
+```bash
+sudo mkdir -p /etc/systemd/system/ollama.service.d
+printf '[Service]\nEnvironment="OLLAMA_HOST=0.0.0.0:11434"\n' | \
+  sudo tee /etc/systemd/system/ollama.service.d/override.conf
+sudo systemctl daemon-reload && sudo systemctl restart ollama
+```
+
+Pull the model — **use the exact tag `OLLAMA_MODEL` in `backend/.env`
+expects** (default `llama3.2`, i.e. untagged/`:latest`, not `:3b` or any
+other explicit size tag — Ollama does not resolve those as equivalent even
+when they point at the same underlying weights):
+
+```bash
+ollama pull llama3.2
+```
+
+Verify the backend container can actually reach it:
+
+```bash
+sudo docker exec <backend-container-name> python -c \
+  "import urllib.request; print(urllib.request.urlopen('http://host.docker.internal:11434/api/tags', timeout=5).read()[:200])"
+```
+
+See `EXPERIMENTS.md` (2026-08-11) for how the tag-mismatch failure mode
+was found — it fails silently (falls through to tier 3, logged only as a
+`WARNING`), so this verification step matters.
 
 ### Step 4 — Ship the code and configure the environment
 

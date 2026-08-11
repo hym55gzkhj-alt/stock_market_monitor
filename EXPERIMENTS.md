@@ -7,6 +7,19 @@ Backend test suite baseline: `cd backend && python -m pytest tests/ -q` → 26 p
 
 ---
 
+## 2026-08-11
+
+### Production AI narration moved from tier 3 (rule-based) to real tier 2 (local Ollama) — VM resized, Ollama installed, then a silent model-tag mismatch found and fixed
+- **Ask:** "i want ollama in production with VM upgrade" — reversing an earlier explicit decision to keep the GCP deployment on `e2-small` and skip Ollama in prod for cost reasons (~4x jump to `e2-standard-2`).
+- **What changed:** resized the live GCE VM `e2-small` → `e2-standard-2` (2 vCPU, 8GB RAM, ~$59.70/mo), which requires briefly stopping the instance. Installed Ollama natively on the VM host (not containerized) as a systemd service, pulled `llama3.2:3b`.
+- **Bug found live, not assumed:** after install, backend logs kept showing `WARNING: Ollama chat completion failed` — Ollama was reachable (`/api/tags` responded fine from inside the backend container) but every `/api/chat` call still 404'd. Root cause: `backend/app/config.py`'s `ollama_model` setting defaults to the **untagged** name `"llama3.2"` (no `OLLAMA_MODEL` override in the VM's `backend/.env`), but the model had only been pulled as `llama3.2:3b` — Ollama treats those as distinct tags even though `:3b` is currently upstream's `:latest`. The failure is silent by design (`ollama_client.py` never raises, always falls through to tier 3), so the app looked fine — dashboard loaded, no errors surfaced to the user — while quietly still generating rule-based text, not real narration.
+- **Also found live:** Ollama's default bind is `127.0.0.1:11434` only, which the Docker backend container can't reach via `host.docker.internal`/`host-gateway` (that DNS name routes to the host's non-loopback interface). Needed a systemd drop-in (`OLLAMA_HOST=0.0.0.0:11434`) before the container could reach it at all — this would have blocked everything even with the correct model tag.
+- **Fix:** `sudo systemctl` drop-in override for the bind address; `ollama pull llama3.2` (no tag) alongside the existing `:3b` pull — same digest/weights, just adds the tag the app's default config actually requests, zero extra disk.
+- **Tested:** live, against the real production container — `docker exec` into the backend and called `POST /api/chat` on `http://host.docker.internal:11434/api/chat` with `model: "llama3.2"` directly: 200, real generated content back. Confirmed no further `WARNING: Ollama chat completion failed` lines in backend logs afterward.
+- **Lesson generalized into README §10:** when pulling an Ollama model for a specific app's production deployment, pull it with the *exact* tag the app's config/env expects — check `OLLAMA_MODEL` (or the code's default) first, don't assume `<model>:<size>` is interchangeable with the untagged name.
+
+---
+
 ## 2026-07-16
 
 ### New: a watchdog that self-corrects when APScheduler's own background thread goes silent
