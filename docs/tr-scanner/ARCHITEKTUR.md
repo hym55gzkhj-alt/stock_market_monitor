@@ -1,6 +1,19 @@
 # KI-Marktscanner für Trade-Republic-Aktien – Architektur und Umsetzungsplan
 
-Stand: 16.11.2026 · Status: Entwurf, noch nicht umgesetzt
+Stand: 16.11.2026 · Status: **umgesetzt** in [`scanner/`](../../scanner/README.md)
+
+> **Umsetzungsstand und Abweichungen vom Entwurf**
+> * Speicher: standardmäßig SQLite (WAL) + Parquet-Cache statt TimescaleDB, Event-Verteilung in-process statt
+>   Redis Streams. Das reicht für ein Universum von einigen hundert Aktien und läuft ohne zusätzliche Dienste.
+>   PostgreSQL/TimescaleDB ist über `TRS_DATABASE_URL` möglich.
+> * MLflow ist nicht eingebunden; Modelle werden versioniert als `data/models/model_<horizont>.joblib` plus
+>   JSON-Metadaten gespeichert, Backtest-Berichte unter `data/reports/`.
+> * Der Tageshorizont wird zum Schlusskurs berechnet (Tagesbalken); während der Handelszeit decken die
+>   Intraday-Horizonte (bis 4 h) aktuelle Entwicklungen ab.
+> * Kursziel/Stopp: 1,2 × / 0,8 × ATR × √h (Tag: 1,0 × / 0,75 ×), damit die Basisrate nicht verschwindend klein wird.
+> * Score = Rang der stufenlosen Modellprognose gegenüber dem Kalibrierabschnitt; angezeigt werden zusätzlich die
+>   kalibrierte Wahrscheinlichkeit mit 95-%-Bereich und die historische Trefferquote der Score-Stufe.
+> * Ein Demo-Modus mit simulierten Daten erlaubt Vorführung und Ende-zu-Ende-Tests ohne Internet.
 
 > **Grundsatz.** Das System analysiert und meldet. Es kauft und verkauft nichts. Jede Aussage über die
 > Qualität eines Signals muss aus einem Backtest außerhalb der Trainingsdaten (out-of-sample) oder aus
