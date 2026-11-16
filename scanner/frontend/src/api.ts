@@ -40,14 +40,20 @@ export type Status = {
   settings: Record<string, unknown>; channels: Record<string, boolean>;
 };
 
+function checkAuth(r: Response) {
+  if (r.status === 401) window.dispatchEvent(new Event("trs-auth-required"));
+}
+
 export async function getJSON<T>(path: string): Promise<T> {
-  const r = await fetch(path);
+  const r = await fetch(path, { credentials: "same-origin" });
+  checkAuth(r);
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   return r.json() as Promise<T>;
 }
 
 export async function postJSON<T>(path: string): Promise<T> {
-  const r = await fetch(path, { method: "POST" });
+  const r = await fetch(path, { method: "POST", credentials: "same-origin" });
+  checkAuth(r);
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   return r.json() as Promise<T>;
 }
@@ -72,11 +78,12 @@ export function usePoll<T>(path: string | null, everyMs = 30000) {
 type WsMessage = { type: "snapshots"; data: Row[]; status: Status } | { type: "alert"; data: { symbol: string; name: string; text: string; score: number; risk: string; created_at: string; demo: boolean } };
 
 /** WebSocket mit automatischem Neuverbinden. */
-export function useLive(onMessage: (m: WsMessage) => void) {
+export function useLive(onMessage: (m: WsMessage) => void, enabled = true) {
   const handler = useRef(onMessage);
   handler.current = onMessage;
   const [connected, setConnected] = useState(false);
   useEffect(() => {
+    if (!enabled) return;
     let ws: WebSocket | null = null;
     let stop = false;
     let retry: ReturnType<typeof setTimeout>;
@@ -89,7 +96,7 @@ export function useLive(onMessage: (m: WsMessage) => void) {
     };
     connect();
     return () => { stop = true; clearTimeout(retry); ws?.close(); };
-  }, []);
+  }, [enabled]);
   return connected;
 }
 

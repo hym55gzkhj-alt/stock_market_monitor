@@ -10,6 +10,8 @@ mit Walk-Forward-Backtests nach Kosten und mit der automatischen Nachbewertung j
 > **Keine Anlageberatung, keine Gewinnversprechen.** Das System analysiert nur öffentlich zugängliche
 > Daten und kauft oder verkauft nichts. Sie entscheiden selbst und kaufen selbst bei Trade Republic.
 
+**Auf dem Handy nutzen:** Anleitung in [`HANDY.md`](HANDY.md) (Server für ca. 4 €/Monat, App-Symbol, Push-Alarme).
+
 Architektur und Begründungen: [`../docs/tr-scanner/ARCHITEKTUR.md`](../docs/tr-scanner/ARCHITEKTUR.md).
 
 ---

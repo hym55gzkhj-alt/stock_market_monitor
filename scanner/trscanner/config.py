@@ -106,6 +106,12 @@ class Settings(BaseSettings):
     random_seed: int = 42
     signal_top_quantile: float = 0.95  # Backtest-Handelsregel: obere 5 % der Prognosen
 
+    # Passwort für Dashboard und API. Pflicht, sobald der Server aus dem Internet erreichbar ist.
+    access_password: str = ""
+    # Geheimnis zum Signieren des Login-Cookies (leer → aus dem Passwort abgeleitet)
+    session_secret: str = ""
+    cookie_secure: bool = False  # True hinter HTTPS (Caddy), damit das Cookie nur verschlüsselt übertragen wird
+
     api_host: str = "0.0.0.0"
     api_port: int = 8100
     cors_origins: str = "http://localhost:5180,http://127.0.0.1:5180"

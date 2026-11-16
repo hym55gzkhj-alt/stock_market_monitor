@@ -46,7 +46,7 @@ export default function Stock() {
           <button key={k} className={`htab ${k === hKey ? "active" : ""}`} onClick={() => setHorizon(k)}>
             <span className="small">{HORIZON_LABELS[k]}</span>
             <ScoreBadge score={v.score} calibrated={v.calibrated} />
-            <span className={`tiny status-${v.status}`}>{v.status}</span>
+            <span className={`tiny status-${v.status}`} title={v.status}>{v.status === "nachgewiesen" ? "✓ belegt" : v.status === "experimentell" ? "exp." : "–"}</span>
           </button>
         ))}
       </div>

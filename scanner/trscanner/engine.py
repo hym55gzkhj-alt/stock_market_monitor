@@ -320,6 +320,19 @@ class Engine:
             "unusual_count": int(sum(1 for s in snaps if s["confluence"] >= 2)),
         }
 
+    def reload_models_if_changed(self) -> bool:
+        """Lädt Modelle neu, wenn ein anderer Prozess (z. B. das wöchentliche Training) sie ersetzt hat."""
+        files = sorted(settings.models_dir.glob("model_*.joblib"))
+        stamp = tuple((f.name, f.stat().st_mtime) for f in files)
+        if stamp != getattr(self, "_model_stamp", None):
+            first = not hasattr(self, "_model_stamp")
+            self._model_stamp = stamp
+            if not first:
+                self.models = load_models()
+                logger.info("Neue Modelle geladen: %s", ", ".join(self.models))
+                return True
+        return False
+
     # ------------------------------------------------------------------ Nachbewertung
     def evaluate_outcomes(self) -> int:
         return evaluate_pending(self.bars)

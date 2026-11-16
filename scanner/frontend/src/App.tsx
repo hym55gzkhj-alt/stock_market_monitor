@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
 import { Row, Status, getJSON, time, useLive } from "./api";
 import Scanner from "./pages/Scanner";
@@ -20,7 +20,45 @@ const NAV = [
   ["/qualitaet", "Signal-Qualität"], ["/einstellungen", "System"],
 ] as const;
 
+function LoginScreen({ onDone }: { onDone: () => void }) {
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const r = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }), credentials: "same-origin" });
+    if (r.ok) onDone();
+    else setErr(r.status === 429 ? "Zu viele Fehlversuche – bitte 15 Minuten warten." : "Falsches Passwort.");
+  };
+  return (
+    <div className="login">
+      <form onSubmit={submit} className="card">
+        <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden><rect width="32" height="32" rx="7" fill="var(--accent)" /><path d="M6 22l6-7 5 4 9-11" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <h1>KI-Marktscanner</h1>
+        <input type="password" autoComplete="current-password" placeholder="Passwort" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus />
+        <button className="btn" type="submit">Anmelden</button>
+        {err && <p className="down small">{err}</p>}
+        <p className="tiny muted">Sie bleiben 90 Tage angemeldet.</p>
+      </form>
+    </div>
+  );
+}
+
 export default function App() {
+  const [auth, setAuth] = useState<"checking" | "ok" | "login">("checking");
+  useEffect(() => {
+    const check = () => fetch("/api/auth", { credentials: "same-origin" }).then((r) => r.json())
+      .then((a) => setAuth(!a.required || a.ok ? "ok" : "login")).catch(() => setAuth("ok"));
+    check();
+    const onAuth = () => setAuth("login");
+    window.addEventListener("trs-auth-required", onAuth);
+    return () => window.removeEventListener("trs-auth-required", onAuth);
+  }, []);
+  if (auth === "checking") return null;
+  if (auth === "login") return <LoginScreen onDone={() => setAuth("ok")} />;
+  return <Main />;
+}
+
+function Main() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -66,7 +104,7 @@ export default function App() {
             <div className="conn small">
               <span className={`dot ${connected ? "on" : "off"}`} />
               {connected ? "Live" : "Getrennt"}
-              {status && <span className="muted"> · {status.realtime ? "Echtzeit" : `verzögert ~${status.delay_minutes} min`} · Scan {time(status.last_scan)}</span>}
+              {status && <span className="muted"> · {status.demo ? "Demo-Daten" : status.realtime ? "Echtzeit" : `verzögert ~${status.delay_minutes} min`} · Scan {time(status.last_scan)}</span>}
             </div>
           </header>
           {status?.demo && (

@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import json
+import time
 import logging
 import threading
 from contextlib import asynccontextmanager
@@ -11,9 +14,10 @@ from pathlib import Path
 
 import pandas as pd
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
@@ -49,6 +53,35 @@ class Hub:
 
 
 hub = Hub()
+
+COOKIE = "trs_session"
+SESSION_DAYS = 90
+_failed_logins: dict[str, list[float]] = {}
+
+
+def _secret() -> bytes:
+    base = settings.session_secret or ("trs:" + settings.access_password)
+    return hashlib.sha256(base.encode()).digest()
+
+
+def make_token(now: float | None = None) -> str:
+    exp = int((now or time.time()) + SESSION_DAYS * 86400)
+    sig = hmac.new(_secret(), str(exp).encode(), hashlib.sha256).hexdigest()
+    return f"{exp}.{sig}"
+
+
+def valid_token(token: str | None) -> bool:
+    if not settings.access_password:
+        return True  # kein Passwort gesetzt → offen (nur für den lokalen Betrieb gedacht)
+    if not token or "." not in token:
+        return False
+    exp, sig = token.split(".", 1)
+    good = hmac.new(_secret(), exp.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(sig, good) and exp.isdigit() and int(exp) > time.time()
+
+
+class Login(BaseModel):
+    password: str
 state: dict = {"engine": None, "scheduler": None, "stream_tasks": []}
 
 
@@ -97,6 +130,8 @@ def start_background(eng: Engine, scheduler: BackgroundScheduler | None = None) 
     sched.add_job(_job("news", eng.refresh_news), "interval", seconds=60 if eng.demo else settings.news_interval_seconds, id="news")
     sched.add_job(_job("outcomes", eng.evaluate_outcomes), "interval", seconds=120, id="outcomes")
     sched.add_job(_job("fx", eng.refresh_fx), "interval", minutes=30, id="fx")
+    eng.reload_models_if_changed()
+    sched.add_job(_job("models", eng.reload_models_if_changed), "interval", minutes=10, id="models")
     sched.start()
 
     def first_run():
@@ -147,11 +182,43 @@ def create_app(engine: Engine | None = None, start_jobs: bool = True) -> FastAPI
     state["engine"] = engine
     app = FastAPI(title="KI-Marktscanner (Trade Republic)", lifespan=lifespan)
     app.state.start_jobs = start_jobs
-    app.add_middleware(CORSMiddleware, allow_origins=settings.cors_list + ["*"] if settings.is_demo else settings.cors_list,
+    app.add_middleware(CORSMiddleware, allow_origins=settings.cors_list, allow_credentials=True,
                        allow_methods=["*"], allow_headers=["*"])
 
     def eng() -> Engine:
         return state["engine"]
+
+    open_paths = {"/api/health", "/api/login", "/api/auth"}
+
+    @app.middleware("http")
+    async def require_login(request: Request, call_next):
+        path = request.url.path
+        if path.startswith("/api/") and path not in open_paths and not valid_token(request.cookies.get(COOKIE)):
+            return JSONResponse({"detail": "Anmeldung erforderlich"}, status_code=401)
+        return await call_next(request)
+
+    @app.get("/api/auth")
+    def auth(request: Request):
+        return {"required": bool(settings.access_password), "ok": valid_token(request.cookies.get(COOKIE))}
+
+    @app.post("/api/login")
+    def login(body: Login, request: Request, response: Response):
+        ip = request.client.host if request.client else "?"
+        recent = [t for t in _failed_logins.get(ip, []) if time.time() - t < 900]
+        if len(recent) >= 10:  # Schutz gegen Durchprobieren
+            raise HTTPException(429, "Zu viele Fehlversuche, bitte 15 Minuten warten")
+        if not settings.access_password or hmac.compare_digest(body.password.encode(), settings.access_password.encode()):
+            _failed_logins.pop(ip, None)
+            response.set_cookie(COOKIE, make_token(), max_age=SESSION_DAYS * 86400, httponly=True, samesite="lax",
+                                secure=settings.cookie_secure)
+            return {"ok": True}
+        _failed_logins[ip] = recent + [time.time()]
+        raise HTTPException(401, "Falsches Passwort")
+
+    @app.post("/api/logout")
+    def logout(response: Response):
+        response.delete_cookie(COOKIE)
+        return {"ok": True}
 
     @app.get("/api/health")
     def health():
@@ -265,6 +332,9 @@ def create_app(engine: Engine | None = None, start_jobs: bool = True) -> FastAPI
 
     @app.websocket("/ws")
     async def ws(websocket: WebSocket):
+        if not valid_token(websocket.cookies.get(COOKIE)):
+            await websocket.close(code=4401)
+            return
         await websocket.accept()
         hub.clients.add(websocket)
         try:
@@ -279,10 +349,10 @@ def create_app(engine: Engine | None = None, start_jobs: bool = True) -> FastAPI
 
         @app.get("/{path:path}")
         def spa(path: str):
-            f = dist / path
-            if path and f.is_file():
-                return FileResponse(f)
-            return FileResponse(dist / "index.html")
+            f = (dist / path).resolve()
+            if path and f.is_file() and f.is_relative_to(dist.resolve()):
+                return FileResponse(f, headers={"Cache-Control": "no-cache"} if path in ("sw.js", "manifest.webmanifest") else None)
+            return FileResponse(dist / "index.html", headers={"Cache-Control": "no-cache"})
 
     return app
 

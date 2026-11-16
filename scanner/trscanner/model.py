@@ -156,11 +156,14 @@ class HorizonModel:
         raw = self.calibrated.raw(Xf)
         p = self.calibrated.iso.predict(raw)
         out = pd.DataFrame(index=X.index)
-        out["prob"] = p
         out["score"] = self.score_of(raw)
         ci = [self.interval_for(float(x)) for x in p]
         out["prob_lo"] = [c[0] for c in ci]
         out["prob_hi"] = [c[1] for c in ci]
+        out["prob_model"] = p
+        # Angezeigt wird nur, was die Out-of-Sample-Ergebnisse belegen: Liegt die Modellwahrscheinlichkeit
+        # außerhalb des 95-%-Bereichs der tatsächlich beobachteten Trefferquote, wird sie darauf begrenzt.
+        out["prob"] = np.clip(p, out["prob_lo"].to_numpy(), out["prob_hi"].to_numpy())
         for q, m in self.quantiles.items():
             out[f"q{int(q * 100)}"] = m.predict(Xf)
         # Monotonie der Quantile sicherstellen

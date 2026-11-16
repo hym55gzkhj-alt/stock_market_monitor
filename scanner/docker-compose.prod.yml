@@ -1,0 +1,44 @@
+# Server-Betrieb mit HTTPS: docker compose -f docker-compose.prod.yml up -d --build
+services:
+  scanner:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TRS_COOKIE_SECURE=true
+    volumes:
+      - scanner_data:/app/data
+      - ./universe:/app/universe
+    # kein öffentlicher Port – nur über Caddy (HTTPS) erreichbar
+
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - TRS_DOMAIN=${TRS_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - scanner
+
+  # Wöchentliches Nachtraining (Sonntag 03:00 UTC), damit die Modelle aktuelle Marktphasen kennen
+  retrain:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - scanner_data:/app/data
+      - ./universe:/app/universe
+    entrypoint: ["/bin/sh", "-c", "while true; do if [ \"$(date -u +%u%H)\" = \"703\" ]; then python -m trscanner train; sleep 3700; fi; sleep 600; done"]
+
+volumes:
+  scanner_data:
+  caddy_data:
+  caddy_config:
