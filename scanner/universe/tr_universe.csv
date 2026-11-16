@@ -1,0 +1,107 @@
+symbol,isin,name,exchange,currency,sector,benchmark,sector_etf
+AAPL,US0378331005,Apple,US,USD,Technology,SPY,XLK
+MSFT,US5949181045,Microsoft,US,USD,Technology,SPY,XLK
+NVDA,US67066G1040,NVIDIA,US,USD,Technology,SPY,XLK
+AMZN,US0231351067,Amazon,US,USD,Consumer Discretionary,SPY,XLY
+GOOGL,US02079K3059,Alphabet A,US,USD,Communication,SPY,XLC
+META,US30303M1027,Meta Platforms,US,USD,Communication,SPY,XLC
+TSLA,US88160R1014,Tesla,US,USD,Consumer Discretionary,SPY,XLY
+AVGO,,Broadcom,US,USD,Technology,SPY,XLK
+AMD,,Advanced Micro Devices,US,USD,Technology,SPY,XLK
+NFLX,,Netflix,US,USD,Communication,SPY,XLC
+ADBE,,Adobe,US,USD,Technology,SPY,XLK
+CRM,,Salesforce,US,USD,Technology,SPY,XLK
+ORCL,,Oracle,US,USD,Technology,SPY,XLK
+INTC,,Intel,US,USD,Technology,SPY,XLK
+QCOM,,Qualcomm,US,USD,Technology,SPY,XLK
+MU,,Micron Technology,US,USD,Technology,SPY,XLK
+PLTR,,Palantir,US,USD,Technology,SPY,XLK
+SNOW,,Snowflake,US,USD,Technology,SPY,XLK
+CRWD,,CrowdStrike,US,USD,Technology,SPY,XLK
+PANW,,Palo Alto Networks,US,USD,Technology,SPY,XLK
+NET,,Cloudflare,US,USD,Technology,SPY,XLK
+SHOP,,Shopify,US,USD,Technology,SPY,XLK
+UBER,,Uber,US,USD,Industrials,SPY,XLI
+ABNB,,Airbnb,US,USD,Consumer Discretionary,SPY,XLY
+PYPL,,PayPal,US,USD,Financials,SPY,XLF
+XYZ,,Block,US,USD,Financials,SPY,XLF
+COIN,,Coinbase,US,USD,Financials,SPY,XLF
+HOOD,,Robinhood,US,USD,Financials,SPY,XLF
+SOFI,,SoFi Technologies,US,USD,Financials,SPY,XLF
+JPM,,JPMorgan Chase,US,USD,Financials,SPY,XLF
+BAC,,Bank of America,US,USD,Financials,SPY,XLF
+GS,,Goldman Sachs,US,USD,Financials,SPY,XLF
+V,,Visa,US,USD,Financials,SPY,XLF
+MA,,Mastercard,US,USD,Financials,SPY,XLF
+BRK-B,,Berkshire Hathaway B,US,USD,Financials,SPY,XLF
+LLY,,Eli Lilly,US,USD,Health Care,SPY,XLV
+NVO,,Novo Nordisk ADR,US,USD,Health Care,SPY,XLV
+UNH,,UnitedHealth,US,USD,Health Care,SPY,XLV
+JNJ,,Johnson & Johnson,US,USD,Health Care,SPY,XLV
+PFE,,Pfizer,US,USD,Health Care,SPY,XLV
+MRNA,,Moderna,US,USD,Health Care,SPY,XLV
+ABBV,,AbbVie,US,USD,Health Care,SPY,XLV
+ISRG,,Intuitive Surgical,US,USD,Health Care,SPY,XLV
+XOM,,Exxon Mobil,US,USD,Energy,SPY,XLE
+CVX,,Chevron,US,USD,Energy,SPY,XLE
+OXY,,Occidental Petroleum,US,USD,Energy,SPY,XLE
+WMT,,Walmart,US,USD,Consumer Staples,SPY,XLP
+COST,,Costco,US,USD,Consumer Staples,SPY,XLP
+KO,,Coca-Cola,US,USD,Consumer Staples,SPY,XLP
+PEP,,PepsiCo,US,USD,Consumer Staples,SPY,XLP
+MCD,,McDonald's,US,USD,Consumer Discretionary,SPY,XLY
+NKE,,Nike,US,USD,Consumer Discretionary,SPY,XLY
+SBUX,,Starbucks,US,USD,Consumer Discretionary,SPY,XLY
+DIS,,Walt Disney,US,USD,Communication,SPY,XLC
+BA,,Boeing,US,USD,Industrials,SPY,XLI
+CAT,,Caterpillar,US,USD,Industrials,SPY,XLI
+GE,,GE Aerospace,US,USD,Industrials,SPY,XLI
+LMT,,Lockheed Martin,US,USD,Industrials,SPY,XLI
+RTX,,RTX,US,USD,Industrials,SPY,XLI
+F,,Ford Motor,US,USD,Consumer Discretionary,SPY,XLY
+GM,,General Motors,US,USD,Consumer Discretionary,SPY,XLY
+RIVN,,Rivian,US,USD,Consumer Discretionary,SPY,XLY
+NIO,,NIO ADR,US,USD,Consumer Discretionary,SPY,XLY
+BABA,,Alibaba ADR,US,USD,Consumer Discretionary,SPY,XLY
+TSM,,Taiwan Semiconductor ADR,US,USD,Technology,SPY,XLK
+ASML,,ASML ADR,US,USD,Technology,SPY,XLK
+ARM,,Arm Holdings ADR,US,USD,Technology,SPY,XLK
+SMCI,,Super Micro Computer,US,USD,Technology,SPY,XLK
+MSTR,,Strategy (MicroStrategy),US,USD,Technology,SPY,XLK
+RKLB,,Rocket Lab,US,USD,Industrials,SPY,XLI
+IONQ,,IonQ,US,USD,Technology,SPY,XLK
+SAP.DE,DE0007164600,SAP,XETRA,EUR,Technology,EXS1.DE,
+SIE.DE,DE0007236101,Siemens,XETRA,EUR,Industrials,EXS1.DE,
+ALV.DE,DE0008404005,Allianz,XETRA,EUR,Financials,EXS1.DE,
+DTE.DE,DE0005557508,Deutsche Telekom,XETRA,EUR,Communication,EXS1.DE,
+BAS.DE,DE000BASF111,BASF,XETRA,EUR,Materials,EXS1.DE,
+BAYN.DE,DE000BAY0017,Bayer,XETRA,EUR,Health Care,EXS1.DE,
+MBG.DE,DE0007100000,Mercedes-Benz Group,XETRA,EUR,Consumer Discretionary,EXS1.DE,
+BMW.DE,DE0005190003,BMW,XETRA,EUR,Consumer Discretionary,EXS1.DE,
+VOW3.DE,DE0007664039,Volkswagen Vz.,XETRA,EUR,Consumer Discretionary,EXS1.DE,
+RHM.DE,DE0007030009,Rheinmetall,XETRA,EUR,Industrials,EXS1.DE,
+IFX.DE,DE0006231004,Infineon,XETRA,EUR,Technology,EXS1.DE,
+DBK.DE,DE0005140008,Deutsche Bank,XETRA,EUR,Financials,EXS1.DE,
+ADS.DE,DE000A1EWWW0,adidas,XETRA,EUR,Consumer Discretionary,EXS1.DE,
+MUV2.DE,,Münchener Rück,XETRA,EUR,Financials,EXS1.DE,
+DHL.DE,,DHL Group,XETRA,EUR,Industrials,EXS1.DE,
+EOAN.DE,,E.ON,XETRA,EUR,Utilities,EXS1.DE,
+RWE.DE,,RWE,XETRA,EUR,Utilities,EXS1.DE,
+DB1.DE,,Deutsche Börse,XETRA,EUR,Financials,EXS1.DE,
+CBK.DE,,Commerzbank,XETRA,EUR,Financials,EXS1.DE,
+HEN3.DE,,Henkel Vz.,XETRA,EUR,Consumer Staples,EXS1.DE,
+MRK.DE,,Merck KGaA,XETRA,EUR,Health Care,EXS1.DE,
+SHL.DE,,Siemens Healthineers,XETRA,EUR,Health Care,EXS1.DE,
+ENR.DE,,Siemens Energy,XETRA,EUR,Industrials,EXS1.DE,
+MTX.DE,,MTU Aero Engines,XETRA,EUR,Industrials,EXS1.DE,
+AIR.DE,,Airbus,XETRA,EUR,Industrials,EXS1.DE,
+HNR1.DE,,Hannover Rück,XETRA,EUR,Financials,EXS1.DE,
+ZAL.DE,,Zalando,XETRA,EUR,Consumer Discretionary,EXS1.DE,
+P911.DE,,Porsche AG,XETRA,EUR,Consumer Discretionary,EXS1.DE,
+HEI.DE,,Heidelberg Materials,XETRA,EUR,Materials,EXS1.DE,
+VNA.DE,,Vonovia,XETRA,EUR,Real Estate,EXS1.DE,
+SRT3.DE,,Sartorius Vz.,XETRA,EUR,Health Care,EXS1.DE,
+HAG.DE,,Hensoldt,XETRA,EUR,Industrials,EXS1.DE,
+R3NK.DE,,Renk Group,XETRA,EUR,Industrials,EXS1.DE,
+TKA.DE,,thyssenkrupp,XETRA,EUR,Materials,EXS1.DE,
+LHA.DE,,Lufthansa,XETRA,EUR,Industrials,EXS1.DE,

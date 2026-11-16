@@ -1,0 +1,10 @@
+# Automatisches HTTPS (Let's Encrypt) für die Domain aus TRS_DOMAIN.
+{$TRS_DOMAIN} {
+	encode gzip
+	reverse_proxy scanner:8100
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+	}
+}

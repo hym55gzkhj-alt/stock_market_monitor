@@ -23,3 +23,7 @@ dist/
 
 # Scratch
 backend/tmp_test_refresh.py
+
+# Marktscanner (nur in GitHub Actions erzeugt)
+/site/
+/state/

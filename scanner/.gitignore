@@ -1,0 +1,10 @@
+data/
+data-demo/
+__pycache__/
+*.pyc
+.env
+frontend/node_modules/
+frontend/dist/
+.pytest_cache/
+.hypothesis/
+frontend/tsconfig.tsbuildinfo

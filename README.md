@@ -1,5 +1,7 @@
 # Stock Market Monitor
 
+> **Neu:** [`scanner/`](scanner/README.md) – KI-Marktscanner für Trade-Republic-Aktien (US/DAX): Echtzeit-Scan, ML-Prognosen je Horizont, Walk-Forward-Backtests, Alarme, Dashboard. Architektur: [`docs/tr-scanner/ARCHITEKTUR.md`](docs/tr-scanner/ARCHITEKTUR.md).
+
 A full-stack web application for tracking Indian NSE stocks in real time, with 10 background AI agents (live market, news, social, corporate actions, regulatory filings, economic calendar, sector rotation, risk, and confidence-scored recommendations), a dark-themed sidebar dashboard, investment alternatives, and financial calculators.
 
 For a system-level view (architecture diagrams, deployment topology, the

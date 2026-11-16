@@ -1,0 +1,14 @@
+services:
+  scanner:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    env_file:
+      - .env
+    volumes:
+      - scanner_data:/app/data
+      - ./universe:/app/universe   # Aktienliste ohne Neubau bearbeiten
+
+volumes:
+  scanner_data:

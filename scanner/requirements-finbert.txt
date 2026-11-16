@@ -1,0 +1,4 @@
+# Optional: FinBERT statt VADER für die Textstimmung (ca. 1 GB, CPU reicht).
+# Installation CPU-only:  pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.2
+transformers>=4.40
