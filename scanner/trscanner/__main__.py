@@ -8,6 +8,7 @@
   outcomes   Live-Signale nachbewerten
   resolve    fehlende Ticker zu ISINs per OpenFIGI ergänzen
   demo       Demo mit simulierten Daten: trainieren und Server starten (ohne Internet)
+  export     ein Scan-Durchlauf und statische Dashboard-Daten schreiben (für GitHub Pages, ohne Server)
 """
 
 from __future__ import annotations
@@ -21,7 +22,9 @@ import sys
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="trscanner", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["serve", "train", "scan", "report", "news", "outcomes", "resolve", "demo"])
+    parser.add_argument("command", choices=["serve", "train", "scan", "report", "news", "outcomes", "resolve", "demo", "export"])
+    parser.add_argument("--out", default="site", help="Zielordner für export")
+    parser.add_argument("--no-train", action="store_true", help="export: nicht automatisch trainieren")
     parser.add_argument("--horizons", help="z. B. 1h,4h,1d (Standard: alle)")
     parser.add_argument("--no-backfill", action="store_true", help="beim Training keine SEC-Historie laden")
     parser.add_argument("--host", default=None)
@@ -69,6 +72,12 @@ def main(argv: list[str] | None = None) -> int:
         _print_report(kv_get("backtest_report", {}) or {})
     elif args.command == "news":
         print(f"{eng.refresh_news()} neue Meldungen")
+    elif args.command == "export":
+        from pathlib import Path
+
+        from .export import run_once_and_export
+
+        print(f"{run_once_and_export(eng, Path(args.out), train_if_missing=not args.no_train)} Dateien exportiert")
     elif args.command == "outcomes":
         print(f"{eng.evaluate_outcomes()} Signale nachbewertet")
     elif args.command == "scan":

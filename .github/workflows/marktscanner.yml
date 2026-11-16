@@ -1,0 +1,122 @@
+# KI-Marktscanner ohne eigenen Server:
+# GitHub führt den Scan werktags alle 10 Minuten aus, trainiert sonntags neu,
+# veröffentlicht das Dashboard auf GitHub Pages und verschickt Push-Alarme.
+# Zustand (Modelle, Signalprotokoll) liegt im Branch "scanner-state".
+name: Marktscanner
+
+on:
+  schedule:
+    - cron: "*/10 6-21 * * 1-5"   # Mo–Fr 06:00–21:59 UTC (Xetra + US-Handelszeit)
+    - cron: "23 4 * * 0"          # Sonntag: Modelle neu trainieren
+  workflow_dispatch:
+    inputs:
+      train:
+        description: "Modelle neu trainieren"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: marktscanner
+  cancel-in-progress: false
+
+env:
+  TRS_DATA_PROVIDER: ${{ secrets.TRS_ALPACA_KEY_ID != '' && 'alpaca' || 'yahoo' }}
+  TRS_ALPACA_KEY_ID: ${{ secrets.TRS_ALPACA_KEY_ID }}
+  TRS_ALPACA_SECRET_KEY: ${{ secrets.TRS_ALPACA_SECRET_KEY }}
+  TRS_FINNHUB_API_KEY: ${{ secrets.TRS_FINNHUB_API_KEY }}
+  TRS_NTFY_URL: ${{ secrets.TRS_NTFY_URL }}
+  TRS_TELEGRAM_BOT_TOKEN: ${{ secrets.TRS_TELEGRAM_BOT_TOKEN }}
+  TRS_TELEGRAM_CHAT_ID: ${{ secrets.TRS_TELEGRAM_CHAT_ID }}
+  TRS_SEC_USER_AGENT: ${{ secrets.TRS_SEC_USER_AGENT || 'trscanner research tool (github actions)' }}
+  TRS_DATA_DIR: ${{ github.workspace }}/state
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scanner/requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: scanner/frontend/package-lock.json
+
+      - name: Abhängigkeiten installieren
+        run: |
+          pip install -r scanner/requirements.txt
+          npm ci --prefix scanner/frontend --no-audit --no-fund
+
+      - name: Zustand laden (Modelle, Signalprotokoll)
+        run: |
+          mkdir -p state
+          if git ls-remote --exit-code --heads origin scanner-state >/dev/null; then
+            git fetch --depth 1 origin scanner-state
+            git archive FETCH_HEAD | tar -x -C state
+          fi
+          ls -la state
+
+      - name: Kurs-Cache laden
+        uses: actions/cache/restore@v4
+        with:
+          path: state/bars
+          key: bars-${{ github.run_id }}
+          restore-keys: bars-
+
+      - name: Modelle trainieren (sonntags, auf Wunsch oder beim ersten Lauf)
+        if: github.event.schedule == '23 4 * * 0' || inputs.train || hashFiles('state/models/model_1h.joblib') == ''
+        working-directory: scanner
+        run: python -m trscanner train
+
+      - name: Dashboard bauen
+        working-directory: scanner/frontend
+        run: VITE_STATIC=1 npx vite build --outDir ../../site
+
+      - name: Scannen und Daten exportieren
+        working-directory: scanner
+        run: python -m trscanner export --out ../site --no-train
+
+      - name: Kurs-Cache speichern
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state/bars
+          key: bars-${{ github.run_id }}
+
+      - name: Zustand speichern (ohne Kurs-Cache)
+        if: always()
+        run: |
+          cd state
+          rm -rf bars
+          git init -q -b scanner-state
+          git config user.name "marktscanner-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Scanner-Zustand $(date -u +%FT%TZ)" || exit 0
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" scanner-state
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: scan
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -63,3 +63,19 @@ def _app(engine):
     from trscanner.api import create_app
 
     return create_app(engine, start_jobs=False)
+
+
+def test_static_export(engine, tmp_path):
+    from trscanner.export import export_site
+
+    engine.refresh_news()
+    engine.scan()
+    n = export_site(engine, tmp_path)
+    assert n >= 8 + len(engine.universe)
+    import json
+
+    status = json.loads((tmp_path / "data" / "status.json").read_text())
+    assert status["static"] is True
+    rows = json.loads((tmp_path / "data" / "scanner.json").read_text())
+    assert len(rows) == len(engine.universe)
+    assert (tmp_path / "data" / "stock" / f"{rows[0]['symbol']}.json").exists()

@@ -239,3 +239,6 @@ details summary { cursor: pointer; color: var(--muted); margin-top: 8px; }
   .head-right { text-align: left; }
   .horizon-tabs { grid-template-columns: repeat(5, minmax(56px, 1fr)); overflow-x: auto; }
 }
+
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--up); margin-right: 5px; vertical-align: middle; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }

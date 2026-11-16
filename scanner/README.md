@@ -10,7 +10,7 @@ mit Walk-Forward-Backtests nach Kosten und mit der automatischen Nachbewertung j
 > **Keine Anlageberatung, keine Gewinnversprechen.** Das System analysiert nur öffentlich zugängliche
 > Daten und kauft oder verkauft nichts. Sie entscheiden selbst und kaufen selbst bei Trade Republic.
 
-**Auf dem Handy nutzen:** Anleitung in [`HANDY.md`](HANDY.md) (Server für ca. 4 €/Monat, App-Symbol, Push-Alarme).
+**Auf dem Handy nutzen:** Anleitung in [`HANDY.md`](HANDY.md). Ohne eigenen Server: GitHub scannt alle 10 Minuten und stellt das Dashboard als App-fähige Webseite bereit; Live-Kurse holt das Handy direkt über Finnhub.
 
 Architektur und Begründungen: [`../docs/tr-scanner/ARCHITEKTUR.md`](../docs/tr-scanner/ARCHITEKTUR.md).
 

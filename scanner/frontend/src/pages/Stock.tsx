@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { HORIZON_LABELS, NewsItem, SignalRec, Snapshot, eur, fmt, pct, time, usePoll } from "../api";
+import { HORIZON_LABELS, NewsItem, SignalRec, Snapshot, eur, fmt, pct, time, usePoll, useLiveQuotes } from "../api";
 import PriceChart, { Bar } from "../components/PriceChart";
 import { Card, Change, Empty, RiskBadge, ScoreBadge, StatusPill } from "../components/ui";
 
@@ -12,6 +12,8 @@ export default function Stock() {
   const [interval, setInterval_] = useState<"5m" | "1d">("5m");
   const [horizon, setHorizon] = useState<string | null>(null);
   const s = data?.snapshot;
+  const { quotes } = useLiveQuotes(symbol ? [symbol.toUpperCase()] : []);
+  const lq = quotes[symbol.toUpperCase()];
   const hKey = horizon ?? s?.best_horizon ?? "1h";
   const h = s?.horizons?.[hKey];
   const markers = useMemo(() => (data?.signals ?? []).map((sg) => ({
@@ -33,8 +35,9 @@ export default function Stock() {
           <div className="small muted">{s.isin && `${s.isin} · `}{s.exchange === "XETRA" ? "Xetra" : "USA"} · {s.sector} · Stand {time(s.ts)}{s.market_open ? " · Börse geöffnet" : " · Börse geschlossen"}</div>
         </div>
         <div className="head-right">
-          <div className="price">{eur(s.price_eur)}</div>
-          <div>{s.currency !== "EUR" && <span className="muted small">{fmt(s.price)} {s.currency} · </span>}<Change value={s.day_change} /> heute</div>
+          <div className="price">{lq ? <><span className="live-dot" />{eur(lq.price * s.eur_rate)}</> : eur(s.price_eur)}</div>
+          <div>{s.currency !== "EUR" && <span className="muted small">{fmt(lq ? lq.price : s.price)} {s.currency} · </span>}<Change value={s.day_change} /> heute</div>
+          {lq && <div className="tiny muted">Live (Finnhub) · {new Date(lq.t).toLocaleTimeString("de-DE")} · Score aus Scan {time(s.ts)}</div>}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLiveData } from "../App";
-import { HORIZON_LABELS, eur, fmt, usePoll } from "../api";
+import { HORIZON_LABELS, eur, fmt, usePoll, useLiveQuotes } from "../api";
 import { Card, Change, Chips, Empty, Kpi, RiskBadge, ScoreBadge, Sparkline } from "../components/ui";
 
 type R = { score: number; confluence: number; alertable: boolean; rvol: number | null; day_change: number };
@@ -32,6 +32,7 @@ export default function Scanner() {
     (!q || `${r.symbol} ${r.name} ${r.isin}`.toLowerCase().includes(q.toLowerCase())))
     .sort(SORTS[sort] ?? SORTS.auff), [rows, q, minScore, onlyConfluence, exchange, sort]);
 
+  const { quotes } = useLiveQuotes(filtered.slice(0, 45).map((r) => r.symbol));
   const alertable = (rows ?? []).filter((r) => r.alertable).length;
   const uncalibrated = rows?.length && !rows.some((r) => r.calibrated);
 
@@ -83,7 +84,7 @@ export default function Scanner() {
                         <Link to={`/aktie/${r.symbol}`} className="sym">{r.symbol}</Link>
                         <div className="small muted ellipsis">{r.name}{r.pump_warning && <span className="warn"> · Pump-Verdacht</span>}{r.stale && <span className="warn"> · veraltet</span>}</div>
                       </td>
-                      <td className="num">{eur(r.price_eur)}</td>
+                      <td className="num">{quotes[r.symbol] && r.price ? <span title="Live-Kurs (Finnhub)"><span className="live-dot" />{eur(quotes[r.symbol].price * ((r.price_eur ?? r.price) / r.price))}</span> : eur(r.price_eur)}</td>
                       <td className="num"><Change value={r.day_change} /></td>
                       <td><Sparkline values={r.sparkline} /></td>
                       <td className="num"><ScoreBadge score={r.score} calibrated={r.calibrated} /></td>

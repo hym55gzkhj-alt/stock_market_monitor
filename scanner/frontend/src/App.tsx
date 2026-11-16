@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
-import { Row, Status, getJSON, time, useLive } from "./api";
+import { BrowserRouter, HashRouter, NavLink, Route, Routes } from "react-router-dom";
+import { Row, STATIC, Status, getJSON, time, useLive } from "./api";
+
+const Router = STATIC ? HashRouter : BrowserRouter;
 import Scanner from "./pages/Scanner";
 import Stock from "./pages/Stock";
 import News from "./pages/News";
@@ -46,6 +48,7 @@ function LoginScreen({ onDone }: { onDone: () => void }) {
 export default function App() {
   const [auth, setAuth] = useState<"checking" | "ok" | "login">("checking");
   useEffect(() => {
+    if (STATIC) { setAuth("ok"); return; } // Handy-Modus: öffentliche Seite ohne Login
     const check = () => fetch("/api/auth", { credentials: "same-origin" }).then((r) => r.json())
       .then((a) => setAuth(!a.required || a.ok ? "ok" : "login")).catch(() => setAuth("ok"));
     check();
@@ -65,9 +68,11 @@ function Main() {
 
   useEffect(() => {
     getJSON<Status>("/api/status").then(setStatus).catch(() => {});
-    getJSON<Row[]>("/api/scanner").then(setRows).catch(() => {});
-    const t = setInterval(() => getJSON<Status>("/api/status").then(setStatus).catch(() => {}), 30000);
-    return () => clearInterval(t);
+    const loadRows = () => getJSON<Row[]>("/api/scanner").then(setRows).catch(() => {});
+    loadRows();
+    const t = setInterval(() => getJSON<Status>("/api/status").then(setStatus).catch(() => {}), STATIC ? 60000 : 30000);
+    const t2 = STATIC ? setInterval(loadRows, 60000) : undefined; // Handy-Modus: neue Scan-Ergebnisse jede Minute prüfen
+    return () => { clearInterval(t); if (t2) clearInterval(t2); };
   }, []);
 
   const connected = useLive((m) => {
@@ -82,11 +87,11 @@ function Main() {
         new Notification(`${m.data.demo ? "[DEMO] " : ""}${m.data.symbol}: KI-Score ${m.data.score}/100`, { body: m.data.text.split("\n").slice(1, 4).join("\n") });
       }
     }
-  });
+  }, !STATIC);
 
   return (
     <LiveContext.Provider value={{ rows, status, connected, setRows }}>
-      <BrowserRouter>
+      <Router>
         <div className="shell">
           <header className="topbar">
             <div className="brand">
@@ -102,18 +107,22 @@ function Main() {
               ))}
             </nav>
             <div className="conn small">
-              <span className={`dot ${connected ? "on" : "off"}`} />
-              {connected ? "Live" : "Getrennt"}
+              <span className={`dot ${connected || STATIC ? "on" : "off"}`} />
+              {STATIC ? "Scan" : connected ? "Live" : "Getrennt"}
               {status && <span className="muted"> · {status.demo ? "Demo-Daten" : status.realtime ? "Echtzeit" : `verzögert ~${status.delay_minutes} min`} · Scan {time(status.last_scan)}</span>}
             </div>
           </header>
+          {STATIC && status && !status.demo && (
+            <div className="banner info">Scan-Ergebnisse werden werktags etwa alle 10 Minuten aktualisiert (Kurse darin ca. 15 Min. verzögert).
+              Live-Kurse für US-Aktien: Finnhub-Schlüssel unter „System“ eintragen.</div>
+          )}
           {status?.demo && (
             <div className="banner demo">
               DEMO-MODUS: Simulierte Kurse und Nachrichten (Replay eines Handelstags). Alle Zahlen dienen nur der Vorführung
               und sagen nichts über echte Märkte aus.
             </div>
           )}
-          {status && !status.demo && !status.realtime && (
+          {status && !status.demo && !status.realtime && !STATIC && (
             <div className="banner info">Datenquelle „{status.provider}“ ist um ca. {status.delay_minutes} Minuten verzögert. Für Echtzeit-Alarme Alpaca einrichten (siehe README).</div>
           )}
           <main>
@@ -140,7 +149,7 @@ function Main() {
             </NavLink>
           ))}
         </div>
-      </BrowserRouter>
+      </Router>
     </LiveContext.Provider>
   );
 }
